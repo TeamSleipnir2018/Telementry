@@ -3,7 +3,7 @@ import os
 import sys
 import re
 import json
-import sqlite3
+import psycopg2
 from digi.xbee.devices import XBeeDevice
 from digi.xbee.exception import TimeoutException
 
@@ -12,8 +12,8 @@ if os.name == "windows" or os.name == "nt" :
 elif os.name == "linux" or os.name == "posix" :
     PORT = "/dev/ttyS" + sys.argv[1]
 BAUD_RATE = 9600
-db = sqlite3.connect("test.db")
-c = db.cursor()
+db = psycopg2.connect("dbname=test user=postgres")
+cur = db.cursor()
 
 def main():
 
