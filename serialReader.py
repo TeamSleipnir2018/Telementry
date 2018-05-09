@@ -12,8 +12,12 @@ if os.name == "windows" or os.name == "nt" :
 elif os.name == "linux" or os.name == "posix" :
     PORT = "/dev/ttyS" + sys.argv[1]
 BAUD_RATE = 9600
-db = psycopg2.connect("dbname=test user=postgres")
-cur = db.cursor()
+
+try:
+    conn = psycopg2.connect("dbname='test' user='postgres' host='localhost' password='admin'")
+    cursor = conn.cursor()
+except:
+    print("Unable to connect to the database")
 
 def main():
 
@@ -24,9 +28,10 @@ def main():
     xbee = XBeeDevice(PORT, BAUD_RATE)
     message = None
 
-    c.execute('''
-    CREATE TABLE vehicledata
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS vehicledata
     (
+        time TIMESTAMP,
         rpm INTEGER,
         speed INTEGER,
         oilTemp REAL,
@@ -35,19 +40,28 @@ def main():
         brakeTemp INTEGER
     );
     ''')
+    conn.commit()
 
-    try:
-        xbee.open()
-        time.sleep(1)
-        message = xbee.read_data()
-        print(message)
-        xbee.close()
-        print(message.data)
-        data = json.loads(message.data[17:-3].decode("utf-8"))
-        print(data)
+    while True :
+        try:
+            xbee.open()
+            time.sleep(1)
+            message = xbee.read_data()
+            xbee.close()
+            if message is not None :
+                print(message.data)
+                print(message.data[17:-2].decode("utf-8"))
+                data = json.loads(message.data[17:-2].decode("utf-8"))
+                print(data)
 
-    except TimeoutException as e:
-        print(e)
+                cursor.execute('''
+                INSERT INTO vehicledata (time, rpm, speed, oiltemp, watertemp, volt)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ''', (time.ctime(), data['rpm'], data['speed'], data['oilTemp'], data['waterTemp'], data['volt']))
+                conn.commit()
+
+        except TimeoutException as e:
+            print(e)
 
 if __name__ == "__main__":
     main()
