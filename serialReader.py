@@ -8,9 +8,9 @@ from digi.xbee.devices import XBeeDevice
 from digi.xbee.exception import TimeoutException
 
 if os.name == "windows" or os.name == "nt" :
-    PORT = "COM" + sys.argv[1]
+    PORT = "COM{}".format(sys.argv[1])
 elif os.name == "linux" or os.name == "posix" :
-    PORT = "/dev/ttyS" + sys.argv[1]
+    PORT = "/dev/ttyS{}".format(sys.argv[1])
 BAUD_RATE = 9600
 
 try:
@@ -44,14 +44,14 @@ def main():
 
     while True :
         try:
-            xbee.open()
+            if not xbee.is_open() :
+                xbee.open()
             time.sleep(1)
             message = xbee.read_data()
-            xbee.close()
+
             if message is not None :
-                print(message.data)
-                print(message.data[17:-2].decode("utf-8"))
-                data = json.loads(message.data[17:-2].decode("utf-8"))
+
+                data = json.loads(re.split(r"(?=\{)(.*?)(?<=\})", str(message.data))[1])
                 print(data)
 
                 cursor.execute('''
@@ -62,6 +62,7 @@ def main():
 
         except TimeoutException as e:
             print(e)
+    xbee.close()
 
 if __name__ == "__main__":
     main()
