@@ -1,6 +1,7 @@
 import time
 import os
 import sys
+import signal
 import re
 import json
 import psycopg2
@@ -13,6 +14,14 @@ elif os.name == "linux" or os.name == "posix" :
     PORT = "/dev/ttyS{}".format(sys.argv[1])
 BAUD_RATE = 9600
 
+xbee = XBeeDevice(PORT, BAUD_RATE)
+message = None
+
+def signal_handler(signal, frame):
+    xbee.close()
+    sys.exit(0)
+signal.signal(signal.SIGINT, signal_handler)
+
 try:
     conn = psycopg2.connect("dbname='test' user='postgres' host='localhost' password='admin'")
     cursor = conn.cursor()
@@ -20,13 +29,6 @@ except:
     print("Unable to connect to the database")
 
 def main():
-
-    print(" +------------------------+")
-    print(" | Reading XBee data      |")
-    print(" +------------------------+\n")
-
-    xbee = XBeeDevice(PORT, BAUD_RATE)
-    message = None
 
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS vehicledata
@@ -41,6 +43,10 @@ def main():
     );
     ''')
     conn.commit()
+
+    print(" +------------------------+")
+    print(" | Reading XBee data      |")
+    print(" +------------------------+\n")
 
     while True :
         try:
