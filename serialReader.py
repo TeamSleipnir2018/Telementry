@@ -23,7 +23,7 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 try:
-    conn = psycopg2.connect("dbname='test' user='postgres' host='localhost' password='admin'")
+    conn = psycopg2.connect(sys.argv[2])
     cursor = conn.cursor()
 except:
     print("Unable to connect to the database")
@@ -38,8 +38,7 @@ def main():
         speed INTEGER,
         oilTemp REAL,
         waterTemp REAL,
-        volt INTEGER,
-        brakeTemp INTEGER
+        volt INTEGER
     );
     ''')
     conn.commit()
